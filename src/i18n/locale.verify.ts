@@ -1,4 +1,17 @@
 import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
+
+// Check first-launch behavior in a fresh module graph, including a non-English OS.
+for (const stored of [null, 'invalid']) {
+  const result = spawnSync(process.execPath, ['--import', 'tsx', '--input-type=module', '-e', `
+    import assert from 'node:assert/strict';
+    Object.defineProperty(globalThis, 'navigator', { configurable: true, value: { language: 'zh-CN' } });
+    globalThis.localStorage = { getItem: () => ${JSON.stringify(stored)} };
+    const { getLocale } = await import('./src/i18n/locale.ts');
+    assert.equal(getLocale(), 'en');
+  `], { cwd: new URL('../..', import.meta.url), encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr || 'first launch must default to English');
+}
 
 const documentElement = { lang: 'en' };
 Object.defineProperty(globalThis, 'localStorage', {

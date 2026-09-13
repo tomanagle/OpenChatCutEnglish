@@ -18,6 +18,13 @@ const { setKeys } = await import('../keystore.ts');
 const REMOTE = 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4';
 const withCode = (code: string): Error => Object.assign(new Error(`connect ${code} 159.106.121.75:443`), { code });
 
+assert.match(
+  unreachableImportError(withCode('ENOTFOUND'), REMOTE)!.message,
+  /Could not connect to/,
+  'an unset locale defaults to English',
+);
+await setKeys({ UI_LOCALE: 'zh' });
+
 // The OS-level connect failure the live app produced: a bare IP and an errno.
 const rawTimeout = withCode('ETIMEDOUT');
 const timedOut = unreachableImportError(rawTimeout, REMOTE);
@@ -67,8 +74,7 @@ try {
   delete process.env.HTTPS_PROXY;
 }
 
-// The message follows the interface language the browser mirrored into UI_LOCALE; unset
-// keeps the original Chinese, so nothing changes for existing installs.
+// Explicit language choices are respected; missing or unknown locales use English.
 await setKeys({ UI_LOCALE: 'en' });
 try {
   const english = unreachableImportError(withCode('ETIMEDOUT'), REMOTE);
@@ -83,10 +89,11 @@ try {
   await setKeys({ UI_LOCALE: 'it' });
   assert.match(unreachableImportError(withCode('ENOTFOUND'), REMOTE)!.message, /Impossibile connettersi/);
   await setKeys({ UI_LOCALE: 'nonsense' });
-  assert.match(unreachableImportError(withCode('ENOTFOUND'), REMOTE)!.message, /无法连接到/, 'an unknown locale falls back to Chinese');
+  assert.match(unreachableImportError(withCode('ENOTFOUND'), REMOTE)!.message, /Could not connect to/, 'an unknown locale falls back to English');
 } finally {
   await setKeys({ UI_LOCALE: '' });
 }
+assert.match(unreachableImportError(withCode('ENOTFOUND'), REMOTE)!.message, /Could not connect to/);
 
 // Anything that is not a connectivity failure is left to the caller's existing handling —
 // an HTTP error, a size limit, a plain message — so no other path changes shape.
