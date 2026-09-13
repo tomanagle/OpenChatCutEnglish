@@ -4,7 +4,7 @@
 // pushed into a run — used to be written in one fixed language, because the server has
 // no navigator and no localStorage. The browser now mirrors its locale switch into the
 // non-secret UI_LOCALE setting (src/i18n/localeSync.ts), so every server message can ask
-// here instead of guessing. Unset means the app's original Chinese.
+// here instead of guessing. Unset means English, matching the browser default.
 import { getKey } from './keystore.ts';
 
 export type UiLocale = 'zh' | 'en' | 'it' | 'ru';
@@ -17,7 +17,7 @@ export function parseUiLocale(value: unknown): UiLocale | null {
 }
 
 export function uiLocale(): UiLocale {
-  return parseUiLocale(getKey('UI_LOCALE')) ?? 'zh';
+  return parseUiLocale(getKey('UI_LOCALE')) ?? 'en';
 }
 
 /** Pick the variant for the current interface language; Italian falls back to English when not provided. */
